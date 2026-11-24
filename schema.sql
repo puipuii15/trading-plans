@@ -42,3 +42,8 @@ create policy "own settings" on public.user_settings
 -- Update: kolom realisasi (aman dijalankan ulang)
 alter table public.trades add column if not exists buy_real numeric;
 alter table public.trades add column if not exists sell_date date;
+
+-- Izin akses untuk user yang login (project Supabase baru tidak memberi izin otomatis)
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.trades to authenticated;
+grant select, insert, update, delete on public.user_settings to authenticated;
