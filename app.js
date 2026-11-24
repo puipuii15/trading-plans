@@ -134,10 +134,10 @@ function fillForm(t) {
   s('code', t.code); s('start', t.start_date); s('end', t.end_date); s('lot', t.lot); s('buy', t.buy); s('buy2', t.buy2);
   s('exit', t.exit_price); s('status', t.status || 'New'); s('tp1', t.tp1); s('tp2', t.tp2); s('cl', t.cl);
   s('rnd', t.rnd === false ? '0' : '1'); s('note', t.note);
-  preview(); showLive();
+  amtFromLot(); preview(); showLive();
 }
 function resetForm() {
-  editId = null; $('f').reset();
+  editId = null; $('f').reset(); amtHint('');
   $('start').value = today(); $('end').value = plus30(today());
   $('tp1').value = def.tp1; $('tp2').value = def.tp2; $('cl').value = def.cl;
   $('fTitle').textContent = 'Tambah saham'; $('save').textContent = 'Simpan'; $('cancel').hidden = true;
@@ -153,15 +153,43 @@ function codeHint() {
 function preview() {
   codeHint();
   const t = readForm();
-  if (!t.buy) { ['oTp1', 'oTp2', 'oEn', 'oCl', 'oRr', 'oPl'].forEach(i => $(i).textContent = '–'); ['dTp1', 'dTp2', 'dCl'].forEach(i => $(i).textContent = ''); return; }
+  const hp = (id, v) => $(id).textContent = v ? '→ ' + fmt(v) : '';
+  if (!t.buy) { ['htp1', 'htp2', 'hcl'].forEach(i => $(i).textContent = ''); ['oTp1', 'oTp2', 'oEn', 'oCl', 'oRr', 'oPl'].forEach(i => $(i).textContent = '–'); ['dTp1', 'dTp2', 'dCl'].forEach(i => $(i).textContent = ''); return; }
   const c = calc(t), d = v => v ? pf((v - t.buy) / t.buy * 100) : '';
   $('oEn').textContent = fmt(t.buy) + (t.buy2 ? ' – ' + fmt(t.buy2) : '');
+  hp('htp1', c.tp1); hp('htp2', c.tp2); hp('hcl', c.cl);
   $('oTp1').textContent = fmt(c.tp1); $('dTp1').textContent = d(c.tp1);
   $('oTp2').textContent = fmt(c.tp2); $('dTp2').textContent = d(c.tp2);
   $('oCl').textContent = fmt(c.cl); $('dCl').textContent = d(c.cl);
   $('oRr').textContent = c.rr ? '1 : ' + c.rr.toFixed(2).replace('.', ',') : '–';
   const o = $('oPl'); o.textContent = pf(c.pl) + (c.nom ? ' (' + (c.nom > 0 ? '+' : '') + fmt(c.nom) + ')' : ''); o.className = c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : '';
 }
+// ---------- Jumlah (Rp) <-> Lot ----------
+const rp = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const digits = v => { const d = String(v).replace(/[^0-9]/g, ''); return d ? +d : null; };
+function amtHint(msg, warn) { const h = $('amtHint'); h.textContent = msg || ''; h.className = 'hint' + (warn ? ' warn' : ''); }
+function amtFromLot() {
+  const buy = num($('buy').value), lot = num($('lot').value);
+  if (buy && lot) { $('amt').value = Math.round(lot * buy * 100).toLocaleString('id-ID'); amtHint(lot + ' lot × ' + fmt(buy) + ' × 100'); }
+  else { if (!lot) $('amt').value = ''; amtHint(''); }
+}
+$('lot').addEventListener('input', amtFromLot);
+$('buy').addEventListener('input', () => { if (num($('lot').value)) amtFromLot(); else lotFromAmt(); });
+function lotFromAmt() {
+  const v = digits($('amt').value), buy = num($('buy').value);
+  if (!v) { amtHint(''); return; }
+  if (!buy) { amtHint('Isi Spec buy dulu', true); return; }
+  const lot = Math.floor(v / (buy * 100));
+  $('lot').value = lot || '';
+  amtHint(lot ? `→ ${lot} lot = ${rp(lot * buy * 100)} (sisa ${rp(v - lot * buy * 100)})` : 'Kurang dari 1 lot (' + rp(buy * 100) + ')', !lot);
+}
+$('amt').addEventListener('input', e => {
+  const v = digits(e.target.value);
+  e.target.value = v ? v.toLocaleString('id-ID') : '';
+  lotFromAmt();
+});
+$('amt').addEventListener('change', () => { if (num($('lot').value)) amtFromLot(); }); // auto-correct = lot × harga
+
 $('f').addEventListener('input', preview);
 $('f').addEventListener('submit', async e => {
   e.preventDefault();
@@ -194,7 +222,7 @@ function render() {
     const c = calc(t), cls = c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : '', nm = NAME.get(t.code);
     return `<tr>
     <td><button type="button" class="code" data-c="${esc(t.code)}" title="Lihat grafik">${esc(t.code)}</button>
-      ${nm ? `<span class="small cname" title="${esc(nm)}">${esc(nm)}</span>` : ''}${t.lot ? `<span class="small">${esc(t.lot)} lot</span>` : ''}</td>
+      ${nm ? `<span class="small cname" title="${esc(nm)}">${esc(nm)}</span>` : ''}${t.lot ? `<span class="small">${esc(t.lot)} lot · ${rp(t.lot * t.buy * 100)}</span>` : ''}</td>
     <td>${esc(dShow(t.start_date))}</td><td>${esc(dShow(t.end_date))}</td>
     <td class="n">${fmt(t.buy)}${t.buy2 ? ' – ' + fmt(t.buy2) : ''}</td>
     <td class="n dn">${fmt(c.cl)}<span class="small">-${esc(t.cl ?? '')}%</span></td>

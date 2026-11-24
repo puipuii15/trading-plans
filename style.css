@@ -25,7 +25,7 @@ label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--mute
 input,select,textarea{font:16px Inter,sans-serif;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 11px;min-height:44px;width:100%}
 textarea{resize:vertical}
 input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-.pct{position:relative}.pct input{padding-right:30px}.pct::after{content:"%";position:absolute;right:11px;bottom:11px;color:var(--mute)}
+.pct{position:relative}.pct input{padding-right:30px}.pct::after{content:"%";position:absolute;right:11px;top:38px;color:var(--mute)}
 .hint{font-size:12px;color:var(--mute);min-height:18px;font-weight:400}
 .hint.warn{color:var(--dn)}
 .actions{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
@@ -110,3 +110,58 @@ button.code{background:none;border:0;border-bottom:1px dashed var(--mute);border
 .dlg-h b{font:600 20px "Space Grotesk",sans-serif}
 .dlg-h button{min-height:40px;padding:0 12px}
 .tvbig{height:min(620px,75vh)}
+.hint.px{font:600 15px "Space Grotesk",sans-serif}#htp1,#htp2{color:var(--up)}#hcl{color:var(--dn)}
+
+/* ===== versi ringkas + HP ===== */
+.wrap{max-width:1100px;padding:16px max(3vw,12px) 40px}
+h1{font-size:clamp(22px,3vw,28px)}
+h2{font-size:16px}
+.top{margin-bottom:12px;gap:8px}
+.sub{font-size:13px;margin-top:2px}
+.who{font-size:13px}.who button{min-height:34px;padding:0 12px;font-size:13px}
+.stats{margin-bottom:12px;border-radius:10px}
+.stat{padding:8px 12px}.stat b{font-size:18px}.stat span{font-size:12px}
+.grid{gap:12px;margin-bottom:16px}
+.card{padding:14px;border-radius:10px}
+#fTitle{margin-bottom:10px!important}
+form.trade{gap:8px 10px}
+label{font-size:12px;gap:3px}
+input,select,textarea{font-size:15px;min-height:38px;padding:7px 9px;border-radius:7px}
+.pct::after{top:31px}
+.hint{font-size:11px;min-height:0}.hint.px{font-size:13px}
+button{min-height:38px;font-size:14px;padding:0 14px}
+.rung{padding:8px 0}.rung .v{font-size:20px}.rung .k,.rung .d{font-size:12px}
+.rr{margin-top:8px;padding:8px 10px;font-size:13px}
+.live{padding:8px 10px}.live-h b{font-size:15px}.tvbox{height:150px}
+.bar{margin-bottom:8px}
+th{padding:8px 10px}td{padding:8px 10px}table{font-size:13px}
+.row-act button{min-height:32px;padding:0 9px;font-size:12px}
+.tools input,.tools select{min-width:120px}
+
+@media(max-width:600px){
+ .wrap{padding:12px 10px 90px}
+ .top{flex-wrap:nowrap;align-items:center}.top .sub{display:none}
+ .who span{display:none}
+ .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .stat{padding:6px 8px}.stat b{font-size:15px}.stat span{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+ input,select,textarea{font-size:16px}
+ form.trade{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ladder{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
+ .ladder h2,.ladder .rr{grid-column:1/-1}
+ .rung{grid-template-columns:auto 1fr;gap:6px}.rung .d{display:none}.rung .v{font-size:17px}
+ .actions{position:sticky;bottom:0;z-index:5;margin:6px -14px -14px;padding:10px 14px;background:var(--card);border-top:1px solid var(--line);border-radius:0 0 10px 10px}
+ .actions .pri{flex:1}
+ .tools{width:100%}.tools input{flex:2}.tools select{flex:1}
+ .stack tr{padding-block:6px}.stack td{padding:2px 10px;padding-inline-start:calc(7em + 10px)}
+ .stack td::before{width:6.5em;margin-inline-start:-7em}
+ .tvbig{height:65vh}
+}
+.grid{align-items:start}
+@media(max-width:600px){
+ .ladder{padding:0;border:0;background:none;display:block}.ladder h2,.ladder .rung{display:none}.ladder .rr{margin:0}
+ .stack td.n .small{display:none}
+ .stack tr{display:grid;grid-template-columns:1fr 1fr}
+ .stack td{padding-inline-start:10px}.stack td::before{float:none;display:block;width:auto;margin:0;font-size:10px}
+ .stack td:first-child,.stack td.note,.stack td:last-child{grid-column:1/-1}
+ .stack td:first-child::before,.stack td:last-child::before{display:none}
+}

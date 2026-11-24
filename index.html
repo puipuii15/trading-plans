@@ -74,16 +74,16 @@
    </div>
     <label>Start<input id="start" type="date"></label>
     <label>End<input id="end" type="date"></label>
-    <label>Lot<input id="lot" type="number" min="0" step="1" placeholder="opsional"></label>
     <label>Info<select id="status"><option>New</option><option>Open</option><option>TP1</option><option>TP2</option><option>CL</option><option>Closed</option></select></label>
+    <label>Bulatkan<select id="rnd"><option value="1">Fraksi BEI</option><option value="0">Tidak</option></select></label>
     <label>Spec buy (awal)<input id="buy" type="number" min="1" step="any" required placeholder="1000"></label>
     <label>Buy atas<input id="buy2" type="number" min="1" step="any" placeholder="opsional"></label>
+    <label>Lot<input id="lot" type="number" min="0" step="1" placeholder="opsional"></label>
+    <label>Jumlah (Rp)<input id="amt" type="text" inputmode="numeric" placeholder="mis. 10.000.000"><span class="hint" id="amtHint"></span></label>
+    <label class="pct">TP1<input id="tp1" type="number" step="any" min="0"><span class="hint px" id="htp1"></span></label>
+    <label class="pct">TP2<input id="tp2" type="number" step="any" min="0"><span class="hint px" id="htp2"></span></label>
+    <label class="pct">CL / TS<input id="cl" type="number" step="any" min="0"><span class="hint px" id="hcl"></span></label>
     <label>Harga exit / last<input id="exit" type="number" min="0" step="any" placeholder="untuk P/L"></label>
-    <label>Bulatkan<select id="rnd"><option value="1">Fraksi BEI</option><option value="0">Tidak</option></select></label>
-    <label class="pct">TP1<input id="tp1" type="number" step="any" min="0"></label>
-    <label class="pct">TP2<input id="tp2" type="number" step="any" min="0"></label>
-    <label class="pct">CL / TS<input id="cl" type="number" step="any" min="0"></label>
-    <span></span>
     <label class="w4">Keterangan<textarea id="note" rows="1" placeholder="alasan entry, setup, dll."></textarea></label>
     <div class="actions">
      <button class="pri" type="submit" id="save">Simpan</button>
