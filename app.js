@@ -134,14 +134,14 @@ function fillForm(t) {
   s('code', t.code); s('start', t.start_date); s('end', t.end_date); s('lot', t.lot); s('buy', t.buy); s('buy2', t.buy2);
   s('exit', t.exit_price); s('status', t.status || 'New'); s('tp1', t.tp1); s('tp2', t.tp2); s('cl', t.cl);
   s('rnd', t.rnd === false ? '0' : '1'); s('note', t.note);
-  preview();
+  preview(); showLive();
 }
 function resetForm() {
   editId = null; $('f').reset();
   $('start').value = today(); $('end').value = plus30(today());
   $('tp1').value = def.tp1; $('tp2').value = def.tp2; $('cl').value = def.cl;
   $('fTitle').textContent = 'Tambah saham'; $('save').textContent = 'Simpan'; $('cancel').hidden = true;
-  preview();
+  preview(); if (typeof showLive === 'function') showLive();
 }
 function codeHint() {
   const c = $('code').value.trim().toUpperCase(), h = $('codeHint');
@@ -193,7 +193,7 @@ function render() {
   $('rows').innerHTML = list.map(t => {
     const c = calc(t), cls = c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : '', nm = NAME.get(t.code);
     return `<tr>
-    <td><a class="code" href="${esc(stockUrl(t.code))}" target="_blank" rel="noopener" title="Buka di RTI">${esc(t.code)}</a>
+    <td><button type="button" class="code" data-c="${esc(t.code)}" title="Lihat grafik">${esc(t.code)}</button>
       ${nm ? `<span class="small cname" title="${esc(nm)}">${esc(nm)}</span>` : ''}${t.lot ? `<span class="small">${esc(t.lot)} lot</span>` : ''}</td>
     <td>${esc(dShow(t.start_date))}</td><td>${esc(dShow(t.end_date))}</td>
     <td class="n">${fmt(t.buy)}${t.buy2 ? ' – ' + fmt(t.buy2) : ''}</td>
@@ -217,10 +217,44 @@ function render() {
   const avg = pls.length ? pls.reduce((a, b) => a + b, 0) / pls.length : null, sa = $('sAvg');
   sa.textContent = pf(avg); sa.className = 'num ' + (avg > 0 ? 'up' : avg < 0 ? 'dn' : '');
 }
+// ---------- grafik TradingView ----------
+const dark = () => matchMedia('(prefers-color-scheme: dark)').matches;
+function tv(el, kind, cfg) {
+  el.innerHTML = '';
+  const w = document.createElement('div'); w.className = 'tradingview-widget-container';
+  const inner = document.createElement('div'); inner.className = 'tradingview-widget-container__widget'; inner.style.height = '100%';
+  const sc = document.createElement('script'); sc.async = true;
+  sc.src = 'https://s3.tradingview.com/external-embedding/embed-widget-' + kind + '.js';
+  sc.textContent = JSON.stringify(cfg);
+  w.append(inner, sc); el.append(w);
+}
+const sym = c => 'IDX:' + c;
+let liveCode = '', liveT;
+function showLive() {
+  const c = $('code').value.trim().toUpperCase();
+  if (!NAME.has(c)) { if (!c) { $('live').hidden = true; liveCode = ''; } return; }
+  if (c === liveCode) return;
+  liveCode = c; $('live').hidden = false;
+  $('liveCode').textContent = c + ' · ' + NAME.get(c);
+  $('liveRti').href = stockUrl(c);
+  tv($('liveChart'), 'mini-symbol-overview', { symbol: sym(c), width: '100%', height: '100%', locale: 'id', dateRange: '1M', colorTheme: dark() ? 'dark' : 'light', isTransparent: true, autosize: true, largeChartUrl: '' });
+}
+$('code').addEventListener('input', () => { clearTimeout(liveT); liveT = setTimeout(showLive, 500); });
+function openChart(c) {
+  $('dCode').textContent = c; $('dName').textContent = NAME.get(c) || ''; $('dRti').href = stockUrl(c);
+  $('dlg').showModal();
+  tv($('dChart'), 'advanced-chart', { symbol: sym(c), autosize: true, interval: 'D', timezone: 'Asia/Jakarta', theme: dark() ? 'dark' : 'light', style: '1', locale: 'id', allow_symbol_change: true, hide_side_toolbar: false, support_host: 'https://www.tradingview.com' });
+}
+$('liveFull').onclick = () => liveCode && openChart(liveCode);
+$('dClose').onclick = () => $('dlg').close();
+$('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').close(); });
+$('dlg').addEventListener('close', () => $('dChart').innerHTML = '');
+
 $('q').addEventListener('input', render);
 $('fs').addEventListener('change', render);
 $('rows').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.c) return openChart(b.dataset.c);
   if (b.dataset.e) {
     const t = trades.find(x => x.id === b.dataset.e); if (!t) return;
     editId = t.id; fillForm(t);

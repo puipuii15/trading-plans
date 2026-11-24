@@ -91,6 +91,10 @@
   </div>
 
   <div class="card ladder">
+   <div class="live" id="live" hidden>
+    <div class="live-h"><b id="liveCode"></b><span class="live-a"><button type="button" class="link" id="liveFull">Grafik lengkap</button><a class="link" id="liveRti" target="_blank" rel="noopener">Buka RTI ↗</a></span></div>
+    <div class="tvbox" id="liveChart"></div>
+   </div>
    <h2 style="margin-bottom:4px">Hasil hitung</h2>
    <div class="rung"><span class="k">TP2</span><span class="v up" id="oTp2">–</span><span class="d up" id="dTp2"></span></div>
    <div class="rung"><span class="k">TP1</span><span class="v up" id="oTp1">–</span><span class="d up" id="dTp1"></span></div>
@@ -117,6 +121,11 @@
  </div>
 </div>
 
+<dialog class="chartdlg" id="dlg">
+ <div class="dlg-h"><div><b id="dCode"></b> <span class="small" id="dName"></span></div>
+  <div class="live-a"><a class="link" id="dRti" target="_blank" rel="noopener">Buka RTI ↗</a><button type="button" id="dClose" aria-label="Tutup">✕</button></div></div>
+ <div class="tvbig" id="dChart"></div>
+</dialog>
 <div class="toast" id="toast"><span id="tMsg"></span><button type="button" id="undo">Undo</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
