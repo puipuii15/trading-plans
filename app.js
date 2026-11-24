@@ -24,10 +24,13 @@ function calc(t) {
   const tp1 = t.tp1 != null ? rnd(en * (1 + t.tp1 / 100), on, 1) : null;
   const tp2 = t.tp2 != null ? rnd(en * (1 + t.tp2 / 100), on, 1) : null;
   const cl = t.cl != null ? rnd(en * (1 - t.cl / 100), on, -1) : null;
-  const pl = t.exit_price ? (t.exit_price - en) / en * 100 : null;
-  const rr = tp1 && cl && en > cl ? (tp1 - en) / (en - cl) : null;
-  const nom = t.exit_price && t.lot ? (t.exit_price - en) * t.lot * 100 : null;
-  return { tp1, tp2, cl, pl, rr, nom };
+  const ent = t.buy_real || en; // harga beli realisasi (kalau diisi)
+  const pl = t.exit_price ? (t.exit_price - ent) / ent * 100 : null;
+  const rr = tp1 && cl && en > cl ? (tp1 - en) / (en - cl) : null; // R:R rencana
+  const risk = cl && ent > cl ? ent - cl : null;
+  const rReal = t.exit_price && risk ? (t.exit_price - ent) / risk : null; // R:R realisasi (kelipatan risiko)
+  const nom = t.exit_price && t.lot ? (t.exit_price - ent) * t.lot * 100 : null;
+  return { tp1, tp2, cl, pl, rr, rReal, nom, ent };
 }
 
 // ---------- setup ----------
@@ -124,7 +127,7 @@ function readForm() {
   return {
     code: $('code').value.trim().toUpperCase(),
     start_date: $('start').value || null, end_date: $('end').value || null,
-    lot: num($('lot').value), buy: num($('buy').value), buy2: num($('buy2').value), exit_price: num($('exit').value),
+    lot: num($('lot').value), buy: num($('buy').value), buy2: num($('buy2').value), exit_price: num($('exit').value), buy_real: num($('breal').value), sell_date: $('sdate').value || null,
     status: $('status').value, tp1: num($('tp1').value), tp2: num($('tp2').value), cl: num($('cl').value),
     rnd: $('rnd').value === '1', note: $('note').value.trim() || null
   };
@@ -132,7 +135,7 @@ function readForm() {
 function fillForm(t) {
   const s = (id, v) => $(id).value = v ?? '';
   s('code', t.code); s('start', t.start_date); s('end', t.end_date); s('lot', t.lot); s('buy', t.buy); s('buy2', t.buy2);
-  s('exit', t.exit_price); s('status', t.status || 'New'); s('tp1', t.tp1); s('tp2', t.tp2); s('cl', t.cl);
+  s('exit', t.exit_price); s('breal', t.buy_real); s('sdate', t.sell_date); s('status', t.status || 'New'); s('tp1', t.tp1); s('tp2', t.tp2); s('cl', t.cl);
   s('rnd', t.rnd === false ? '0' : '1'); s('note', t.note);
   amtFromLot(); preview(); showLive();
 }
@@ -162,10 +165,15 @@ function preview() {
   $('oTp2').textContent = fmt(c.tp2); $('dTp2').textContent = d(c.tp2);
   $('oCl').textContent = fmt(c.cl); $('dCl').textContent = d(c.cl);
   $('oRr').textContent = c.rr ? '1 : ' + c.rr.toFixed(2).replace('.', ',') : '–';
+  const rv = $('realHint');
+  if (c.pl != null) {
+    rv.innerHTML = `<b class="${c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : ''}">${pf(c.pl)}</b>` + (c.nom ? ` · ${c.nom > 0 ? '+' : '−'}${rp(Math.abs(c.nom))}` : '') + (c.rReal != null ? ` · R:R realisasi <b>${rx(c.rReal)}</b>` : '') + (c.rr ? ` <span class="small" style="display:inline">(rencana 1 : ${c.rr.toFixed(2).replace('.', ',')})</span>` : '');
+  } else rv.textContent = 'Isi harga jual untuk hitung hasil akhir.';
   const o = $('oPl'); o.textContent = pf(c.pl) + (c.nom ? ' (' + (c.nom > 0 ? '+' : '') + fmt(c.nom) + ')' : ''); o.className = c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : '';
 }
 // ---------- Jumlah (Rp) <-> Lot ----------
 const rp = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+const rx = r => (r >= 0 ? '1 : ' : '−1 : ') + Math.abs(r).toFixed(2).replace('.', ',');
 const digits = v => { const d = String(v).replace(/[^0-9]/g, ''); return d ? +d : null; };
 function amtHint(msg, warn) { const h = $('amtHint'); h.textContent = msg || ''; h.className = 'hint' + (warn ? ' warn' : ''); }
 function amtFromLot() {
@@ -190,6 +198,12 @@ $('amt').addEventListener('input', e => {
 });
 $('amt').addEventListener('change', () => { if (num($('lot').value)) amtFromLot(); }); // auto-correct = lot × harga
 
+$('exit').addEventListener('change', () => {
+  const st = $('status').value, t = readForm(); if (!t.exit_price || !t.buy || !['New', 'Open'].includes(st)) return;
+  const c = calc(t);
+  $('status').value = c.tp2 && t.exit_price >= c.tp2 ? 'TP2' : c.tp1 && t.exit_price >= c.tp1 ? 'TP1' : c.cl && t.exit_price <= c.cl ? 'CL' : 'Closed';
+  if (!$('sdate').value) $('sdate').value = today();
+});
 $('f').addEventListener('input', preview);
 $('f').addEventListener('submit', async e => {
   e.preventDefault();
@@ -228,8 +242,8 @@ function render() {
     <td class="n dn">${fmt(c.cl)}<span class="small">-${esc(t.cl ?? '')}%</span></td>
     <td class="n up">${fmt(c.tp1)}<span class="small">+${esc(t.tp1 ?? '')}%</span></td>
     <td class="n up">${fmt(c.tp2)}<span class="small">+${esc(t.tp2 ?? '')}%</span></td>
-    <td class="n">${t.exit_price ? fmt(t.exit_price) : '–'}</td>
-    <td class="n ${cls}"><b>${pf(c.pl)}</b>${c.nom ? `<span class="small">${c.nom > 0 ? '+' : ''}${fmt(c.nom)}</span>` : ''}</td>
+    <td class="n">${t.exit_price ? fmt(t.exit_price) : '–'}${t.sell_date ? `<span class="small">${esc(dShow(t.sell_date))}</span>` : ''}</td>
+    <td class="n ${cls}"><b>${pf(c.pl)}</b>${c.nom ? `<span class="small">${c.nom > 0 ? '+' : ''}${fmt(c.nom)}</span>` : ''}${c.rReal != null ? `<span class="small">R ${rx(c.rReal)}</span>` : ''}</td>
     <td><span class="chip ${esc(t.status)}">${esc(t.status)}</span></td>
     <td class="note">${esc(t.note)}</td>
     <td><div class="row-act"><button type="button" data-e="${esc(t.id)}">Edit</button><button type="button" data-d="${esc(t.id)}">Hapus</button></div></td></tr>`;
@@ -241,6 +255,10 @@ function render() {
   const pls = closed.map(t => calc(t).pl);
   $('sTot').textContent = trades.length;
   $('sOpen').textContent = trades.filter(t => t.status === 'New' || t.status === 'Open').length;
+  const tot = closed.reduce((a, t) => a + (calc(t).nom || 0), 0), st = $('sTotRp');
+  st.textContent = closed.length ? (tot > 0 ? '+' : tot < 0 ? '−' : '') + rp(Math.abs(tot)) : '–'; st.className = 'num ' + (tot > 0 ? 'up' : tot < 0 ? 'dn' : '');
+  const rs = closed.map(t => calc(t).rReal).filter(r => r != null);
+  $('sAvgR').textContent = rs.length ? 'R:R rata-rata ' + rx(rs.reduce((a, b) => a + b, 0) / rs.length) : '';
   $('sWin').textContent = pls.length ? Math.round(pls.filter(p => p > 0).length / pls.length * 100) + '%' : '–';
   const avg = pls.length ? pls.reduce((a, b) => a + b, 0) / pls.length : null, sa = $('sAvg');
   sa.textContent = pf(avg); sa.className = 'num ' + (avg > 0 ? 'up' : avg < 0 ? 'dn' : '');
@@ -310,9 +328,9 @@ $('undo').onclick = async () => {
   trades.splice(i, 0, data); render();
 };
 $('copy').onclick = async () => {
-  const h = ['Saham', 'Nama', 'Start', 'End', 'Spec Buy', 'Buy Atas', 'CL/TS', 'TP1', 'TP2', 'Exit', 'P/L %', 'Info', 'Keterangan'];
+  const h = ['Saham', 'Nama', 'Start', 'End', 'Spec Buy', 'Buy Atas', 'CL/TS', 'TP1', 'TP2', 'Beli real', 'Jual', 'Tgl jual', 'P/L %', 'P/L Rp', 'R realisasi', 'Info', 'Keterangan'];
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const lines = [h.join(',')].concat(trades.map(t => { const c = calc(t); return [t.code, NAME.get(t.code), t.start_date, t.end_date, t.buy, t.buy2, c.cl, c.tp1, c.tp2, t.exit_price, c.pl != null ? c.pl.toFixed(2) : '', t.status, t.note].map(q).join(','); }));
+  const lines = [h.join(',')].concat(trades.map(t => { const c = calc(t); return [t.code, NAME.get(t.code), t.start_date, t.end_date, t.buy, t.buy2, c.cl, c.tp1, c.tp2, t.buy_real, t.exit_price, t.sell_date, c.pl != null ? c.pl.toFixed(2) : '', c.nom != null ? Math.round(c.nom) : '', c.rReal != null ? c.rReal.toFixed(2) : '', t.status, t.note].map(q).join(','); }));
   try { await navigator.clipboard.writeText(lines.join('\n')); toast('CSV disalin — paste ke Excel/Sheets'); } catch (e) { toast('Gagal menyalin'); }
 };
 

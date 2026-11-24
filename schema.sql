@@ -38,3 +38,7 @@ create policy "own trades" on public.trades
 drop policy if exists "own settings" on public.user_settings;
 create policy "own settings" on public.user_settings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Update: kolom realisasi (aman dijalankan ulang)
+alter table public.trades add column if not exists buy_real numeric;
+alter table public.trades add column if not exists sell_date date;

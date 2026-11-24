@@ -60,7 +60,8 @@
   <div class="stat"><span>Total posisi</span><b class="num" id="sTot">0</b></div>
   <div class="stat"><span>Masih jalan</span><b class="num" id="sOpen">0</b></div>
   <div class="stat"><span>Win rate (closed)</span><b class="num" id="sWin">–</b></div>
-  <div class="stat"><span>Rata-rata P/L</span><b class="num" id="sAvg">–</b></div>
+  <div class="stat"><span>Rata-rata P/L</span><b class="num" id="sAvg">–</b><span id="sAvgR"></span></div>
+  <div class="stat"><span>Total P/L (Rp)</span><b class="num" id="sTotRp">–</b></div>
  </div>
 
  <div class="grid">
@@ -83,7 +84,13 @@
     <label class="pct">TP1<input id="tp1" type="number" step="any" min="0"><span class="hint px" id="htp1"></span></label>
     <label class="pct">TP2<input id="tp2" type="number" step="any" min="0"><span class="hint px" id="htp2"></span></label>
     <label class="pct">CL / TS<input id="cl" type="number" step="any" min="0"><span class="hint px" id="hcl"></span></label>
-    <label>Harga exit / last<input id="exit" type="number" min="0" step="any" placeholder="untuk P/L"></label>
+    <span></span>
+    <fieldset class="real w4"><legend>Realisasi / hasil akhir</legend>
+     <label>Harga beli real<input id="breal" type="number" min="0" step="any" placeholder="= spec buy"></label>
+     <label>Harga jual<input id="exit" type="number" min="0" step="any" placeholder="harga terjual"></label>
+     <label>Tgl jual<input id="sdate" type="date"></label>
+     <p class="realres" id="realHint"></p>
+    </fieldset>
     <label class="w4">Keterangan<textarea id="note" rows="1" placeholder="alasan entry, setup, dll."></textarea></label>
     <div class="actions">
      <button class="pri" type="submit" id="save">Simpan</button>
@@ -100,7 +107,7 @@
    <div class="rung"><span class="k">TP1</span><span class="v up" id="oTp1">–</span><span class="d up" id="dTp1"></span></div>
    <div class="rung"><span class="k">Entry</span><span class="v" id="oEn">–</span><span class="d"></span></div>
    <div class="rung"><span class="k">CL / TS</span><span class="v dn" id="oCl">–</span><span class="d dn" id="dCl"></span></div>
-   <div class="rr"><span>Risk : Reward (TP1) <b id="oRr">–</b></span><span>P/L sekarang <b id="oPl">–</b></span></div>
+   <div class="rr"><span>Risk : Reward (TP1) <b id="oRr">–</b></span><span>P/L realisasi <b id="oPl">–</b></span></div>
   </div>
  </div>
 
@@ -114,7 +121,7 @@
  </div>
  <div class="tbl">
   <table class="stack">
-   <thead><tr><th>Saham</th><th>Start</th><th>End</th><th class="n">Spec buy</th><th class="n">CL / TS</th><th class="n">TP1</th><th class="n">TP2</th><th class="n">Exit</th><th class="n">P/L %</th><th>Info</th><th>Keterangan</th><th></th></tr></thead>
+   <thead><tr><th>Saham</th><th>Start</th><th>End</th><th class="n">Spec buy</th><th class="n">CL / TS</th><th class="n">TP1</th><th class="n">TP2</th><th class="n">Jual</th><th class="n">P/L %</th><th>Info</th><th>Keterangan</th><th></th></tr></thead>
    <tbody id="rows"></tbody>
   </table>
   <div class="empty" id="empty" hidden>Belum ada saham. Isi form di atas.</div>
