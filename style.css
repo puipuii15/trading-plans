@@ -96,7 +96,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .eye .i-hide,.eye.on .i-show{display:none}.eye.on .i-hide{display:block}
 
 /* grafik TradingView */
-.live{margin:-4px 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.live{margin:-4px 0 4px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--field)}
 .live-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .live-h b{font:600 18px "Space Grotesk",sans-serif}
 .live-a{display:flex;gap:14px;align-items:center}

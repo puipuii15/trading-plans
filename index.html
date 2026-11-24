@@ -68,6 +68,10 @@
    <h2 id="fTitle" style="margin-bottom:14px">Tambah saham</h2>
    <form class="trade" id="f" autocomplete="off">
     <label class="w4">Saham<input id="code" list="stockList" required maxlength="8" placeholder="Ketik kode atau nama, mis. BBCA" style="text-transform:uppercase"><span class="hint" id="codeHint"></span></label>
+   <div class="live w4" id="live" hidden>
+    <div class="live-h"><b id="liveCode"></b><span class="live-a"><button type="button" class="link" id="liveFull">Grafik lengkap</button><a class="link" id="liveRti" target="_blank" rel="noopener">Buka RTI ↗</a></span></div>
+    <div class="tvbox" id="liveChart"></div>
+   </div>
     <label>Start<input id="start" type="date"></label>
     <label>End<input id="end" type="date"></label>
     <label>Lot<input id="lot" type="number" min="0" step="1" placeholder="opsional"></label>
@@ -91,10 +95,6 @@
   </div>
 
   <div class="card ladder">
-   <div class="live" id="live" hidden>
-    <div class="live-h"><b id="liveCode"></b><span class="live-a"><button type="button" class="link" id="liveFull">Grafik lengkap</button><a class="link" id="liveRti" target="_blank" rel="noopener">Buka RTI ↗</a></span></div>
-    <div class="tvbox" id="liveChart"></div>
-   </div>
    <h2 style="margin-bottom:4px">Hasil hitung</h2>
    <div class="rung"><span class="k">TP2</span><span class="v up" id="oTp2">–</span><span class="d up" id="dTp2"></span></div>
    <div class="rung"><span class="k">TP1</span><span class="v up" id="oTp1">–</span><span class="d up" id="dTp1"></span></div>
