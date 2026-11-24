@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trading Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Belum dikonfigurasi -->
+<div class="setup" id="vSetup" hidden>
+ <div class="card">
+  <h2>Hampir jadi</h2>
+  <p>Isi <code>SUPABASE_URL</code> dan <code>SUPABASE_ANON_KEY</code> di file <code>config.js</code>, lalu refresh. Lihat README.md.</p>
+ </div>
+</div>
+
+<!-- Login / Daftar -->
+<div class="auth" id="vAuth" hidden>
+ <div class="card">
+  <h1>Trading Plan</h1>
+  <p class="sub">Catat entry, TP &amp; CL — tersimpan di akunmu.</p>
+  <div class="tabs" role="tablist">
+   <button type="button" role="tab" id="tabIn" aria-selected="true">Masuk</button>
+   <button type="button" role="tab" id="tabUp" aria-selected="false">Daftar</button>
+  </div>
+  <form id="fAuth" novalidate>
+   <label>Email<input id="aEmail" type="email" autocomplete="email" required></label>
+   <label id="lPass">Password<span class="pw"><input id="aPass" type="password" autocomplete="current-password" minlength="6" required><button type="button" class="eye" data-for="aPass" aria-label="Tampilkan password"><svg class="i-show" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="i-hide" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.9 8.3 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/></svg></button></span></label>
+   <div class="msg" id="aMsg" hidden></div>
+   <button class="pri" type="submit" id="aBtn">Masuk</button>
+   <button class="link" type="button" id="aForgot">Lupa password?</button>
+  </form>
+ </div>
+</div>
+
+<!-- Set password baru (dari link reset) -->
+<div class="auth" id="vReset" hidden>
+ <div class="card">
+  <h1>Password baru</h1>
+  <form id="fReset">
+   <label>Password baru<span class="pw"><input id="rPass" type="password" autocomplete="new-password" minlength="6" required><button type="button" class="eye" data-for="rPass" aria-label="Tampilkan password"><svg class="i-show" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="i-hide" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.9 8.3 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/></svg></button></span></label>
+   <div class="msg" id="rMsg" hidden></div>
+   <button class="pri" type="submit">Simpan password</button>
+  </form>
+ </div>
+</div>
+
+<!-- App -->
+<div class="wrap" id="vApp" hidden>
+ <div class="top">
+  <div><h1>Trading Plan</h1><p class="sub">Isi harga entry, TP &amp; CL dihitung otomatis — dibulatkan ke fraksi harga BEI.</p></div>
+  <div class="who"><span id="uEmail"></span><button type="button" id="logout">Keluar</button></div>
+ </div>
+
+ <div class="stats">
+  <div class="stat"><span>Total posisi</span><b class="num" id="sTot">0</b></div>
+  <div class="stat"><span>Masih jalan</span><b class="num" id="sOpen">0</b></div>
+  <div class="stat"><span>Win rate (closed)</span><b class="num" id="sWin">–</b></div>
+  <div class="stat"><span>Rata-rata P/L</span><b class="num" id="sAvg">–</b></div>
+ </div>
+
+ <div class="grid">
+  <div class="card">
+   <h2 id="fTitle" style="margin-bottom:14px">Tambah saham</h2>
+   <form class="trade" id="f" autocomplete="off">
+    <label class="w4">Saham<input id="code" list="stockList" required maxlength="8" placeholder="Ketik kode atau nama, mis. BBCA" style="text-transform:uppercase"><span class="hint" id="codeHint"></span></label>
+    <label>Start<input id="start" type="date"></label>
+    <label>End<input id="end" type="date"></label>
+    <label>Lot<input id="lot" type="number" min="0" step="1" placeholder="opsional"></label>
+    <label>Info<select id="status"><option>New</option><option>Open</option><option>TP1</option><option>TP2</option><option>CL</option><option>Closed</option></select></label>
+    <label>Spec buy (awal)<input id="buy" type="number" min="1" step="any" required placeholder="1000"></label>
+    <label>Buy atas<input id="buy2" type="number" min="1" step="any" placeholder="opsional"></label>
+    <label>Harga exit / last<input id="exit" type="number" min="0" step="any" placeholder="untuk P/L"></label>
+    <label>Bulatkan<select id="rnd"><option value="1">Fraksi BEI</option><option value="0">Tidak</option></select></label>
+    <label class="pct">TP1<input id="tp1" type="number" step="any" min="0"></label>
+    <label class="pct">TP2<input id="tp2" type="number" step="any" min="0"></label>
+    <label class="pct">CL / TS<input id="cl" type="number" step="any" min="0"></label>
+    <span></span>
+    <label class="w4">Keterangan<textarea id="note" rows="1" placeholder="alasan entry, setup, dll."></textarea></label>
+    <div class="actions">
+     <button class="pri" type="submit" id="save">Simpan</button>
+     <button type="button" id="cancel" hidden>Batal edit</button>
+     <button type="button" id="setDef">Jadikan % default</button>
+    </div>
+   </form>
+   <datalist id="stockList"></datalist>
+  </div>
+
+  <div class="card ladder">
+   <h2 style="margin-bottom:4px">Hasil hitung</h2>
+   <div class="rung"><span class="k">TP2</span><span class="v up" id="oTp2">–</span><span class="d up" id="dTp2"></span></div>
+   <div class="rung"><span class="k">TP1</span><span class="v up" id="oTp1">–</span><span class="d up" id="dTp1"></span></div>
+   <div class="rung"><span class="k">Entry</span><span class="v" id="oEn">–</span><span class="d"></span></div>
+   <div class="rung"><span class="k">CL / TS</span><span class="v dn" id="oCl">–</span><span class="d dn" id="dCl"></span></div>
+   <div class="rr"><span>Risk : Reward (TP1) <b id="oRr">–</b></span><span>P/L sekarang <b id="oPl">–</b></span></div>
+  </div>
+ </div>
+
+ <div class="bar">
+  <h2>Daftar trading</h2>
+  <div class="tools">
+   <input id="q" type="search" placeholder="Cari kode / keterangan">
+   <select id="fs"><option value="">Semua info</option><option>New</option><option>Open</option><option>TP1</option><option>TP2</option><option>CL</option><option>Closed</option></select>
+   <button type="button" id="copy">Copy CSV</button>
+  </div>
+ </div>
+ <div class="tbl">
+  <table class="stack">
+   <thead><tr><th>Saham</th><th>Start</th><th>End</th><th class="n">Spec buy</th><th class="n">CL / TS</th><th class="n">TP1</th><th class="n">TP2</th><th class="n">Exit</th><th class="n">P/L %</th><th>Info</th><th>Keterangan</th><th></th></tr></thead>
+   <tbody id="rows"></tbody>
+  </table>
+  <div class="empty" id="empty" hidden>Belum ada saham. Isi form di atas.</div>
+ </div>
+</div>
+
+<div class="toast" id="toast"><span id="tMsg"></span><button type="button" id="undo">Undo</button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="stocks.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
