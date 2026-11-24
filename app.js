@@ -115,11 +115,12 @@ async function enter() {
   $('rows').innerHTML = '<tr><td colspan="12" class="empty">Memuat…</td></tr>';
   const [t, s] = await Promise.all([
     sb.from('trades').select('*').order('created_at', { ascending: false }),
-    sb.from('user_settings').select('tp1,tp2,cl').maybeSingle()
+    sb.from('user_settings').select('*').maybeSingle()
   ]);
   if (t.error) { toast('Gagal memuat data: ' + t.error.message); trades = []; } else trades = t.data;
   if (s.data) def = { tp1: +s.data.tp1, tp2: +s.data.tp2, cl: +s.data.cl };
-  resetForm(); render();
+  if (s.data?.indicators) inds = { ...inds, ...s.data.indicators };
+  resetForm(); render(); loadLast();
 }
 
 // ---------- form ----------
@@ -217,7 +218,7 @@ $('f').addEventListener('submit', async e => {
   if (error) return toast('Gagal simpan: ' + error.message);
   const i = trades.findIndex(x => x.id === data.id);
   if (i >= 0) trades[i] = data; else trades.unshift(data);
-  render(); resetForm(); $('code').focus();
+  render(); resetForm(); $('code').focus(); loadLast();
 });
 $('cancel').onclick = resetForm;
 $('setDef').onclick = async () => {
@@ -235,15 +236,15 @@ function render() {
   $('rows').innerHTML = list.map(t => {
     const c = calc(t), cls = c.pl > 0 ? 'up' : c.pl < 0 ? 'dn' : '', nm = NAME.get(t.code);
     return `<tr>
-    <td><button type="button" class="code" data-c="${esc(t.code)}" title="Lihat grafik">${esc(t.code)}</button>
+    <td><button type="button" class="code" data-c="${esc(t.code)}" data-id="${esc(t.id)}" title="Lihat grafik">${esc(t.code)}</button>
       ${nm ? `<span class="small cname" title="${esc(nm)}">${esc(nm)}</span>` : ''}${t.lot ? `<span class="small">${esc(t.lot)} lot · ${rp(t.lot * t.buy * 100)}</span>` : ''}</td>
     <td>${esc(dShow(t.start_date))}</td><td>${esc(dShow(t.end_date))}</td>
     <td class="n">${fmt(t.buy)}${t.buy2 ? ' – ' + fmt(t.buy2) : ''}</td>
     <td class="n dn">${fmt(c.cl)}<span class="small">-${esc(t.cl ?? '')}%</span></td>
     <td class="n up">${fmt(c.tp1)}<span class="small">+${esc(t.tp1 ?? '')}%</span></td>
     <td class="n up">${fmt(c.tp2)}<span class="small">+${esc(t.tp2 ?? '')}%</span></td>
-    <td class="n">${t.exit_price ? fmt(t.exit_price) : '–'}${t.sell_date ? `<span class="small">${esc(dShow(t.sell_date))}</span>` : ''}</td>
-    <td class="n ${cls}"><b>${pf(c.pl)}</b>${c.nom ? `<span class="small">${c.nom > 0 ? '+' : ''}${fmt(c.nom)}</span>` : ''}${c.rReal != null ? `<span class="small">R ${rx(c.rReal)}</span>` : ''}</td>
+    <td class="n">${t.exit_price ? fmt(t.exit_price) : lastPx[t.code] ? `<span class="small">last</span>${fmt(lastPx[t.code])}` : '–'}${t.sell_date ? `<span class="small">${esc(dShow(t.sell_date))}</span>` : ''}</td>
+    <td class="n ${cls}"><b>${c.pl == null && lastPx[t.code] ? `<span class="small">float</span><span class="${lastPx[t.code] >= c.ent ? 'up' : 'dn'}">${pf((lastPx[t.code] - c.ent) / c.ent * 100)}</span>` : pf(c.pl)}</b>${c.nom ? `<span class="small">${c.nom > 0 ? '+' : ''}${fmt(c.nom)}</span>` : ''}${c.rReal != null ? `<span class="small">R ${rx(c.rReal)}</span>` : ''}</td>
     <td><span class="chip ${esc(t.status)}">${esc(t.status)}</span></td>
     <td class="note">${esc(t.note)}</td>
     <td><div class="row-act"><button type="button" data-e="${esc(t.id)}">Edit</button><button type="button" data-d="${esc(t.id)}">Hapus</button></div></td></tr>`;
@@ -263,44 +264,109 @@ function render() {
   const avg = pls.length ? pls.reduce((a, b) => a + b, 0) / pls.length : null, sa = $('sAvg');
   sa.textContent = pf(avg); sa.className = 'num ' + (avg > 0 ? 'up' : avg < 0 ? 'dn' : '');
 }
-// ---------- grafik TradingView ----------
-const dark = () => matchMedia('(prefers-color-scheme: dark)').matches;
-function tv(el, kind, cfg) {
-  el.innerHTML = '';
-  const w = document.createElement('div'); w.className = 'tradingview-widget-container';
-  const inner = document.createElement('div'); inner.className = 'tradingview-widget-container__widget'; inner.style.height = '100%';
-  const sc = document.createElement('script'); sc.async = true;
-  sc.src = 'https://s3.tradingview.com/external-embedding/embed-widget-' + kind + '.js';
-  sc.textContent = JSON.stringify(cfg);
-  w.append(inner, sc); el.append(w);
+// ---------- harga & grafik (Supabase Edge Function "quote") ----------
+const dark = () => document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+const qCache = new Map();
+async function quote(codes, range = '5d', full = false) {
+  const key = codes.join(',') + '|' + range + '|' + full, hit = qCache.get(key);
+  if (hit && Date.now() - hit.at < 60000) return hit.data;
+  const { data, error } = await sb.functions.invoke('quote', { body: { s: codes.join(','), range, full } });
+  if (error) throw error;
+  qCache.set(key, { at: Date.now(), data }); return data;
 }
-const sym = c => 'IDX:' + c;
-let liveCode = '', liveT;
-function showLive() {
+const NO_FN = 'Grafik belum aktif — pasang Edge Function "quote" di Supabase (lihat README).';
+const chg = (q) => q && q.last && q.prev ? (q.last - q.prev) / q.prev * 100 : null;
+function pxLine(el, q) {
+  if (!q || !q.last) { el.textContent = 'Harga tidak tersedia'; el.className = 'px'; return; }
+  const c = chg(q);
+  el.innerHTML = `<b>${fmt(q.last)}</b> <span class="${c > 0 ? 'up' : c < 0 ? 'dn' : ''}">${c == null ? '' : pf(c)}</span>` + (q.time ? ` <span class="small" style="display:inline">${new Date(q.time * 1000).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>` : '');
+  el.className = 'px';
+}
+function formLines() {
+  const t = readForm(); if (!t.buy) return [];
+  const c = calc(t);
+  return [{ price: t.buy, color: '#8fb0bb', title: 'Entry' }, { price: c.tp1, color: '#22b573', title: 'TP1' }, { price: c.tp2, color: '#22b573', title: 'TP2' }, { price: c.cl, color: '#e5484d', title: 'CL' }];
+}
+// indikator tersimpan per akun
+let inds = { sma: [20, 50], ichi: false, vol: true, rsi: true, macd: false }, indT;
+function saveInds() {
+  clearTimeout(indT);
+  indT = setTimeout(async () => {
+    const { error } = await sb.from('user_settings').upsert({ user_id: user.id, indicators: inds });
+    if (error) toast('Gagal simpan indikator: ' + error.message);
+  }, 600);
+}
+
+let liveCode = '', liveT, liveChart = null, liveQ = null;
+async function showLive(force) {
   const c = $('code').value.trim().toUpperCase();
-  if (!NAME.has(c)) { if (!c) { $('live').hidden = true; liveCode = ''; } return; }
-  if (c === liveCode) return;
+  if (!NAME.has(c)) { if (!c) { $('live').hidden = true; liveCode = ''; liveChart?.destroy(); liveChart = null; } return; }
+  if (c === liveCode && !force) return;
   liveCode = c; $('live').hidden = false;
   $('liveCode').textContent = c + ' · ' + NAME.get(c);
   $('liveRti').href = stockUrl(c);
-  tv($('liveChart'), 'mini-symbol-overview', { symbol: sym(c), width: '100%', height: '100%', locale: 'id', dateRange: '1M', colorTheme: dark() ? 'dark' : 'light', isTransparent: true, autosize: true, largeChartUrl: '' });
+  $('livePx').textContent = 'Memuat harga…'; $('livePx').className = 'px';
+  liveChart?.destroy(); liveChart = null; $('liveChart').innerHTML = '';
+  try {
+    const d = await quote([c], '6mo', true); if (liveCode !== c) return;
+    liveQ = d[c]; pxLine($('livePx'), liveQ);
+    $('useBuy').hidden = !liveQ?.last;
+    if (liveQ?.candles?.length) liveChart = TPChart.render($('liveChart'), liveQ.candles, { inds: { ...inds, rsi: false, macd: false }, lines: formLines(), dark: dark(), bars: 60 });
+  } catch (e) { if (liveCode === c) { $('livePx').textContent = NO_FN; $('livePx').className = 'px warn'; } }
 }
 $('code').addEventListener('input', () => { clearTimeout(liveT); liveT = setTimeout(showLive, 500); });
-function openChart(c) {
-  $('dCode').textContent = c; $('dName').textContent = NAME.get(c) || ''; $('dRti').href = stockUrl(c);
-  $('dlg').showModal();
-  tv($('dChart'), 'advanced-chart', { symbol: sym(c), autosize: true, interval: 'D', timezone: 'Asia/Jakarta', theme: dark() ? 'dark' : 'light', style: '1', locale: 'id', allow_symbol_change: true, hide_side_toolbar: false, support_host: 'https://www.tradingview.com' });
+$('f').addEventListener('input', e => { if (liveChart && e.target.id !== 'code') liveChart.setLines(formLines()); });
+$('useBuy').onclick = () => { if (!liveQ?.last) return; $('buy').value = liveQ.last; $('buy').dispatchEvent(new Event('input', { bubbles: true })); };
+
+// dialog grafik lengkap
+let dlgChart = null, dlgCode = '', dlgTrade = null;
+function indBar() {
+  $('iSma').value = (inds.sma || []).join(', ');
+  $('iIchi').checked = !!inds.ichi; $('iVol').checked = !!inds.vol; $('iRsi').checked = !!inds.rsi; $('iMacd').checked = !!inds.macd;
 }
+async function drawDlg() {
+  dlgChart?.destroy(); dlgChart = null;
+  const box = $('dChart'); box.innerHTML = '<p class="empty">Memuat grafik…</p>';
+  try {
+    const d = await quote([dlgCode], $('iRange').value, true), q = d[dlgCode];
+    pxLine($('dPx'), q);
+    if (!q?.candles?.length) { box.innerHTML = '<p class="empty">Data grafik tidak tersedia.</p>'; return; }
+    let lines = formLines();
+    if (dlgTrade) { const c = calc(dlgTrade); lines = [{ price: dlgTrade.buy_real || dlgTrade.buy, color: '#8fb0bb', title: 'Entry' }, { price: c.tp1, color: '#22b573', title: 'TP1' }, { price: c.tp2, color: '#22b573', title: 'TP2' }, { price: c.cl, color: '#e5484d', title: 'CL' }]; }
+    dlgChart = TPChart.render(box, q.candles, { inds, lines, dark: dark(), panels: true, bars: 120 });
+  } catch (e) { box.innerHTML = `<p class="empty">${esc(NO_FN)}</p>`; }
+}
+function openChart(c, trade) {
+  dlgCode = c; dlgTrade = trade || null;
+  $('dCode').textContent = c; $('dName').textContent = NAME.get(c) || ''; $('dRti').href = stockUrl(c); $('dPx').textContent = '';
+  indBar(); $('dlg').showModal(); drawDlg();
+}
+$('indbar').addEventListener('change', e => {
+  if (e.target.id === 'iRange') return drawDlg();
+  inds = {
+    sma: [...new Set($('iSma').value.split(/[^0-9]+/).map(Number).filter(n => n > 1 && n <= 250))].slice(0, 6),
+    ichi: $('iIchi').checked, vol: $('iVol').checked, rsi: $('iRsi').checked, macd: $('iMacd').checked
+  };
+  indBar(); saveInds(); drawDlg(); if (liveCode) showLive(true);
+});
 $('liveFull').onclick = () => liveCode && openChart(liveCode);
 $('dClose').onclick = () => $('dlg').close();
 $('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').close(); });
-$('dlg').addEventListener('close', () => $('dChart').innerHTML = '');
+$('dlg').addEventListener('close', () => { dlgChart?.destroy(); dlgChart = null; });
+
+// harga terakhir untuk posisi yang masih jalan (floating P/L di tabel)
+let lastPx = {};
+async function loadLast() {
+  const codes = [...new Set(trades.filter(t => !t.exit_price).map(t => t.code))].filter(c => NAME.has(c)).slice(0, 30);
+  if (!codes.length) return;
+  try { const d = await quote(codes, '5d'); lastPx = Object.fromEntries(Object.entries(d).filter(([, v]) => v?.last).map(([k, v]) => [k, v.last])); render(); } catch (e) { /* fungsi belum dipasang */ }
+}
 
 $('q').addEventListener('input', render);
 $('fs').addEventListener('change', render);
 $('rows').addEventListener('click', async e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.c) return openChart(b.dataset.c);
+  if (b.dataset.c) return openChart(b.dataset.c, trades.find(x => x.id === b.dataset.id));
   if (b.dataset.e) {
     const t = trades.find(x => x.id === b.dataset.e); if (!t) return;
     editId = t.id; fillForm(t);

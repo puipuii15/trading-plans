@@ -46,3 +46,13 @@ Kalau yang terbuka bukan saham itu:
 
 ## Update website
 Edit file → drag ulang folder ke Netlify (Deploys → drag & drop). Data di database tetap aman.
+
+## 5. Harga & grafik (Edge Function "quote")
+Harga terakhir + grafik diambil dari Yahoo Finance lewat Supabase Edge Function (gratis).
+1. Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Nama function: `quote` (persis).
+3. Hapus isi contoh, paste seluruh isi `supabase/functions/quote/index.ts` → **Deploy**.
+4. Biarkan setting **Verify JWT** menyala (hanya user yang login bisa memakai).
+
+Harga dari Yahoo bisa delay ±10–15 menit. Jangan dipakai untuk eksekusi order.
+Indikator (SMA, Ichimoku, Volume, RSI, MACD) dipilih di "Grafik lengkap" dan tersimpan per akun.

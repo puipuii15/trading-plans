@@ -102,7 +102,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .live-a{display:flex;gap:14px;align-items:center}
 .live-a .link{font-size:14px;text-decoration:none}.live-a .link:hover{text-decoration:underline}
 .tvbox{height:190px;border-radius:8px;overflow:hidden}
-.tvbox>div,.tvbig>div{height:100%}
+
 button.code{background:none;border:0;border-bottom:1px dashed var(--mute);border-radius:0;padding:0;min-height:auto;color:inherit;cursor:pointer}
 .chartdlg{width:min(1100px,96vw);max-height:92vh;padding:0;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)}
 .chartdlg::backdrop{background:rgba(3,18,25,.6)}
@@ -171,3 +171,20 @@ th{padding:8px 10px}td{padding:8px 10px}table{font-size:13px}
 .real legend{font-size:12px;font-weight:600;color:var(--ink);padding:0 4px}
 .realres{grid-column:1/-1;margin:0;font-size:13px;color:var(--mute)}.realres b{font-family:"Space Grotesk",sans-serif;font-size:15px;color:var(--ink)}.realres b.up{color:var(--up)}.realres b.dn{color:var(--dn)}
 @media(max-width:600px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.real{grid-template-columns:1fr 1fr}.real label:nth-child(4){grid-column:1/-1}}
+
+/* grafik sendiri */
+.live-p{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.px{font-size:13px;color:var(--mute)}.px b{font:600 18px "Space Grotesk",sans-serif;color:var(--ink)}.px.warn{color:var(--dn)}
+.link{font-size:13px}
+.tvbox{height:200px}
+.tpc{display:flex;flex-direction:column}
+.tpc-main{flex:1;min-height:0}.tpc-sub{height:22%;min-height:90px;border-top:1px solid var(--line)}
+.indbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line)}
+.indbar .inl{flex-direction:row;align-items:center;gap:6px}.indbar .inl input{width:110px;min-height:34px}
+.indbar .chk{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);cursor:pointer}
+.indbar .chk input{width:18px;height:18px;min-height:0;accent-color:var(--acc)}
+.indbar select{width:auto;min-height:34px}
+.tvbig{height:min(640px,72vh);padding:4px 4px 0}
+.tvbig .empty{padding:60px 20px}
+@media(max-width:600px){.tvbig{height:68vh}.indbar{padding:8px 10px;gap:6px 10px}.tvbox{height:170px}}
+.tpc>.tpc-main{flex:1 1 auto;min-height:0;height:auto}.tpc>.tpc-sub{flex:0 0 22%;height:auto}

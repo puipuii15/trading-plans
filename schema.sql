@@ -47,3 +47,6 @@ alter table public.trades add column if not exists sell_date date;
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.trades to authenticated;
 grant select, insert, update, delete on public.user_settings to authenticated;
+
+-- Update: indikator grafik tersimpan per akun
+alter table public.user_settings add column if not exists indicators jsonb;

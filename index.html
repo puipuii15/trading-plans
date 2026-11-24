@@ -71,6 +71,7 @@
     <label class="w4">Saham<input id="code" list="stockList" required maxlength="8" placeholder="Ketik kode atau nama, mis. BBCA" style="text-transform:uppercase"><span class="hint" id="codeHint"></span></label>
    <div class="live w4" id="live" hidden>
     <div class="live-h"><b id="liveCode"></b><span class="live-a"><button type="button" class="link" id="liveFull">Grafik lengkap</button><a class="link" id="liveRti" target="_blank" rel="noopener">Buka RTI ↗</a></span></div>
+    <div class="live-p"><span class="px" id="livePx"></span><button type="button" class="link" id="useBuy" hidden>Pakai sbg Spec buy</button></div>
     <div class="tvbox" id="liveChart"></div>
    </div>
     <label>Start<input id="start" type="date"></label>
@@ -129,15 +130,25 @@
 </div>
 
 <dialog class="chartdlg" id="dlg">
- <div class="dlg-h"><div><b id="dCode"></b> <span class="small" id="dName"></span></div>
+ <div class="dlg-h"><div><b id="dCode"></b> <span class="small" id="dName"></span> <span class="px" id="dPx"></span></div>
   <div class="live-a"><a class="link" id="dRti" target="_blank" rel="noopener">Buka RTI ↗</a><button type="button" id="dClose" aria-label="Tutup">✕</button></div></div>
+ <div class="indbar" id="indbar">
+  <label class="inl">SMA<input id="iSma" type="text" inputmode="numeric" placeholder="20, 50"></label>
+  <label class="chk"><input type="checkbox" id="iIchi">Ichimoku</label>
+  <label class="chk"><input type="checkbox" id="iVol">Volume</label>
+  <label class="chk"><input type="checkbox" id="iRsi">RSI</label>
+  <label class="chk"><input type="checkbox" id="iMacd">MACD</label>
+  <select id="iRange" aria-label="Rentang"><option value="3mo">3 bln</option><option value="6mo">6 bln</option><option value="1y" selected>1 thn</option><option value="2y">2 thn</option></select>
+ </div>
  <div class="tvbig" id="dChart"></div>
 </dialog>
 <div class="toast" id="toast"><span id="tMsg"></span><button type="button" id="undo">Undo</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
+<script src="vendor/lightweight-charts.standalone.production.js"></script>
 <script src="stocks.js"></script>
+<script src="chart.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
